@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Bitcoin Sentry • Mobile Cockpit</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0e14">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ======================================================== -->
+  <!-- 1. SECURITY LOCK SCREEN (6-DIGIT PIN)                    -->
+  <!-- ======================================================== -->
+  <div id="lockScreen" class="lock-screen">
+    <div class="lock-card">
+      <div class="lock-logo-ring">
+        <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+
+      <div class="lock-title">BITCOIN SENTRY</div>
+      <div class="lock-subtitle">SECURE MOBILE COCKPIT</div>
+
+      <div class="pin-display">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+        <div class="pin-dot" id="dot4"></div>
+        <div class="pin-dot" id="dot5"></div>
+      </div>
+
+      <div id="pinErrorMsg" class="pin-status">ENTER 6-DIGIT PIN</div>
+
+      <div class="keypad">
+        <button class="key-btn" data-key="1">1</button>
+        <button class="key-btn" data-key="2">2</button>
+        <button class="key-btn" data-key="3">3</button>
+        <button class="key-btn" data-key="4">4</button>
+        <button class="key-btn" data-key="5">5</button>
+        <button class="key-btn" data-key="6">6</button>
+        <button class="key-btn" data-key="7">7</button>
+        <button class="key-btn" data-key="8">8</button>
+        <button class="key-btn" data-key="9">9</button>
+        <button class="key-btn fn-btn" data-key="clear">CLR</button>
+        <button class="key-btn" data-key="0">0</button>
+        <button class="key-btn fn-btn" data-key="backspace">⌫</button>
+      </div>
+
+      <div class="remember-row">
+        <label class="remember-label">
+          <input type="checkbox" id="rememberMe"> Keep unlocked on this phone
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 2. MAIN COCKPIT DASHBOARD (REVEALED AFTER PIN DECRYPT)    -->
+  <!-- ======================================================== -->
+  <main id="cockpit" class="cockpit hidden">
+    <!-- Top Status Bar -->
+    <header class="cockpit-header">
+      <div class="brand-col">
+        <div class="status-beacon">
+          <span class="beacon-pulse"></span>
+          <span class="beacon-text" id="telemetryStatus">LIVE SYNC</span>
+        </div>
+        <div class="wallet-pill" id="walletPill" title="Tap to copy">
+          <span class="wallet-icon">₿</span>
+          <span class="wallet-addr" id="walletAddr">bc1qn40...q66p66</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnRefresh" class="header-btn" title="Refresh Now">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button id="btnLock" class="header-btn lock-btn" title="Lock Cockpit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- SECTION 1: MISSION TARGET & ON-CHAIN BOUNTY -->
+    <section class="card card-hero">
+      <div class="hero-header">
+        <span class="card-tag gold-glow">🏆 SOLO JACKPOT BOUNTY</span>
+        <span class="card-badge green-badge">● ON-CHAIN SYNCED</span>
+      </div>
+      <div class="hero-body">
+        <div class="bounty-col">
+          <div class="bounty-val">3.125 BTC</div>
+          <div class="bounty-sub" id="bountyUsd">[$253,000+ USD Full Block Subsidy]</div>
+        </div>
+        <div class="bounty-meta">
+          <div class="meta-label">POOL</div>
+          <div class="meta-val" id="poolName">sgsolo.ckpool.org</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: TARGET BLOCK (DUAL-SCOPE ZEROES) -->
+    <section class="card card-target">
+      <div class="target-header">
+        <div class="target-title">
+          <span class="target-badge-pill">🎯 TARGET BLOCK</span>
+          <span class="target-block-num" id="currentBlock">#976076</span>
+        </div>
+        <div class="target-timer" id="blockElapsed">⏱️ 02m 45s</div>
+      </div>
+
+      <div class="target-details-grid">
+        <div class="detail-box">
+          <div class="detail-label">NETWORK DIFF</div>
+          <div class="detail-val cyan-txt" id="networkDiff">134.82 T</div>
+        </div>
+        <div class="detail-box">
+          <div class="detail-label">ACTIVE BLOCK BEST</div>
+          <div class="detail-val" id="blkBestZeroes">
+            <span class="zeroes-badge badge-gold" id="blkZeroesBadge">8 zeroes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SESSION RECORD TROPHY -->
+      <div class="trophy-strip">
+        <div class="trophy-left">
+          <span class="trophy-icon">🏆</span>
+          <span class="trophy-label">SESSION RECORD:</span>
+          <span class="trophy-badge" id="sessionRecordBadge">12 ZEROES</span>
+        </div>
+        <div class="trophy-right" id="trophyDiff">Diff: 72,977.2</div>
+      </div>
+      <div class="best-hash-preview" id="bestHashPreview">
+        000000000000e5e4...ced000
+      </div>
+    </section>
+
+    <!-- SECTION 3: MINING PERFORMANCE & TACHOMETER -->
+    <section class="card card-speed">
+      <div class="speed-header">
+        <span class="card-tag cyan-glow">⚡ HASH ENGINE THROUGHPUT</span>
+        <span class="peak-label" id="peakSpeed">Peak: 152.8 MH/s</span>
+      </div>
+
+      <div class="speed-body">
+        <div class="speed-big" id="speedVal">150.2 <span class="unit">MH/s</span></div>
+        <div class="speed-sub" id="speedEfficiency">Efficiency: 8,450 kH/W</div>
+      </div>
+
+      <div class="tachometer-track">
+        <div class="tachometer-fill" id="tachoFill" style="width: 82%;"></div>
+      </div>
+
+      <div class="nonces-grid">
+        <div class="nonces-box">
+          <div class="nonces-label">TOTAL NONCES SWEPT</div>
+          <div class="nonces-val gold-txt" id="totalNonces">170.21 TRILLION</div>
+        </div>
+        <div class="nonces-box">
+          <div class="nonces-label">BATCH PIPELINE</div>
+          <div class="nonces-val green-txt" id="batchSize">524k Threads (I19)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: SILICON HARDWARE TELEMETRY -->
+    <section class="card card-silicon">
+      <div class="silicon-header">
+        <span class="card-tag">🖥️ ZOTAC GTX 750 TELEMETRY</span>
+        <span class="silicon-health" id="siliconHealth">● 100% HEALTHY</span>
+      </div>
+
+      <div class="silicon-grid">
+        <div class="metric-card">
+          <div class="m-icon">🌡️</div>
+          <div class="m-val" id="gpuTemp">60°C</div>
+          <div class="m-label">TEMP</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-icon">⚡</div>
+          <div class="m-val" id="gpuWatts">17.2W</div>
+          <div class="m-label">POWER</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-icon">🌀</div>
+          <div class="m-val" id="gpuFan">46%</div>
+          <div class="m-label">FAN</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-icon">⏱️</div>
+          <div class="m-val" id="gpuClock">1163M</div>
+          <div class="m-label">CLOCK</div>
+        </div>
+      </div>
+
+      <div class="cpu-strip">
+        <span>CPU 50-Shot Sniper: <strong>Core 2 Duo E7200</strong></span>
+        <span id="cpuTempLoad">61°C · 1.9L</span>
+      </div>
+    </section>
+
+    <!-- SECTION 5: MISSION CONTROL LIVE EVENT FEED -->
+    <section class="card card-feed">
+      <div class="feed-header">
+        <span class="card-tag">📡 LIVE RADAR EVENT FEED</span>
+        <span class="feed-sub">Active Intelligence</span>
+      </div>
+
+      <div class="feed-container" id="feedContainer">
+        <!-- Event rows injected dynamically -->
+        <div class="feed-row feed-gold">
+          <span class="f-time">09:54:19</span>
+          <span class="f-text">💎 Search Milestone: Crossed 170.21 Trillion nonces! GPU running 100% stable.</span>
+        </div>
+        <div class="feed-row feed-magenta">
+          <span class="f-time">09:52:46</span>
+          <span class="f-text">🎯 Target Block #976070 Best: <strong>00000000000... (11 zeroes · Diff: 18,041.8)</strong></span>
+        </div>
+        <div class="feed-row feed-cyan">
+          <span class="f-time">09:53:32</span>
+          <span class="f-text">🎯 CPU 50-Shot Salvo (62°C) · Hit 4 zeroes (281ms)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER / SYNC STATUS -->
+    <footer class="cockpit-footer">
+      <div class="sync-row">
+        <span class="sync-indicator pulse-green"></span>
+        <span id="lastUpdatedText">Connecting to sentry...</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://mempool.space/address/bc1qn40gkdmfvmg85vw4tspt5jejq3703l6uq66p66" target="_blank" rel="noopener">Mempool Explorer ↗</a>
+      </div>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
