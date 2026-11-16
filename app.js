@@ -178,17 +178,37 @@
     handleKeyInput(key);
   });
 
+  // Telemetry URL endpoints (Raw GitHub CDN bypasses Jekyll build delay & Fastly edge cache)
+  const RAW_TELEMETRY_URL = 'https://raw.githubusercontent.com/rudhrahas-dev/btc-sentry-live/main/telemetry.json';
+  const LOCAL_TELEMETRY_URL = 'telemetry.json';
+
+  async function fetchTelemetryPayload() {
+    const bust = Date.now();
+    // 1. Prioritize raw.githubusercontent.com for instant real-time telemetry
+    try {
+      const respRaw = await fetch(`${RAW_TELEMETRY_URL}?t=${bust}`, { cache: 'no-store' });
+      if (respRaw.ok) {
+        return await respRaw.json();
+      }
+    } catch (rawErr) {
+      console.warn('Raw GitHub fetch failed, falling back to local Pages url:', rawErr);
+    }
+
+    // 2. Fallback to GitHub Pages local asset
+    const respLocal = await fetch(`${LOCAL_TELEMETRY_URL}?t=${bust}`, { cache: 'no-store' });
+    if (!respLocal.ok) {
+      throw new Error(`HTTP ${respLocal.status}: Telemetry offline`);
+    }
+    return await respLocal.json();
+  }
+
   async function attemptUnlock(pinCandidate) {
     pinStatus.textContent = 'VERIFYING KEY...';
     pinStatus.classList.remove('error');
 
     try {
-      // 1. Fetch latest telemetry payload
-      const response = await fetch('telemetry.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!response.ok) {
-        throw new Error('Sentry telemetry offline or pending');
-      }
-      const encryptedData = await response.json();
+      // 1. Fetch latest telemetry payload (zero-latency raw endpoint)
+      const encryptedData = await fetchTelemetryPayload();
 
       // 2. Decrypt with PIN
       const payload = await decryptTelemetry(pinCandidate, encryptedData);
@@ -281,8 +301,11 @@
       bestHashPreview.title = `Full Hash: ${h} (from ${data.highest_source || 'GPU Search'})`;
     }
 
-    // Elapsed block time calculation
-    if (data.block_elapsed_sec !== undefined) {
+    // Elapsed block time calculation (exact epoch sync)
+    if (data.block_start_epoch) {
+      blockStartTimestamp = data.block_start_epoch * 1000;
+      updateElapsedTimer();
+    } else if (data.block_elapsed_sec !== undefined) {
       blockStartTimestamp = Date.now() - (data.block_elapsed_sec * 1000);
       updateElapsedTimer();
     }
@@ -397,9 +420,7 @@
   async function fetchLatest() {
     if (!activePin) return;
     try {
-      const res = await fetch('telemetry.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const enc = await res.json();
+      const enc = await fetchTelemetryPayload();
       const payload = await decryptTelemetry(activePin, enc);
       cachedPayload = payload;
       renderTelemetry(payload);
@@ -414,8 +435,8 @@
 
   function startPolling() {
     stopPolling();
-    // Poll telemetry every 15s
-    pollIntervalId = setInterval(fetchLatest, 15000);
+    // Poll telemetry every 10s for real-time mobile sync
+    pollIntervalId = setInterval(fetchLatest, 10000);
     // Tick timers every 1s
     elapsedTimerId = setInterval(() => {
       updateElapsedTimer();
